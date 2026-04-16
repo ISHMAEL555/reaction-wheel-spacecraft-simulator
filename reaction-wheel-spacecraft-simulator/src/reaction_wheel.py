@@ -1,0 +1,1 @@
+"""Reaction wheel model scaffolding."""
