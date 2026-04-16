@@ -1,0 +1,104 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    🚀 QUICK REFERENCE CARD 🚀                            ║
+║                                                                            ║
+║                  Spacecraft Attitude Dynamics Simulator                   ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+LOCATION:
+  /workspaces/SPACE_SYSTEMS/reaction-wheel-spacecraft-simulator/
+
+QUICK START (COPY & PASTE):
+  cd /workspaces/SPACE_SYSTEMS/reaction-wheel-spacecraft-simulator
+  pip install -r requirements.txt
+  python3 01_single_rw_derivation.py
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SCRIPTS:
+
+  01_single_rw_derivation.py    Theory Demo           1 second
+  02_single_rw_simulation.py    Full Simulation       15 seconds
+  03_pd_control.py              Control Analysis      40 seconds
+  00_template_custom.py         Your Template         N/A
+
+═══════════════════════════════════════════════════════════════════════════════
+
+RUN ONE TEST:
+  python3 01_single_rw_derivation.py
+
+RUN ALL TESTS:
+  python3 01_single_rw_derivation.py && \
+  python3 02_single_rw_simulation.py && \
+  python3 03_pd_control.py
+
+═══════════════════════════════════════════════════════════════════════════════
+
+WHAT EACH PRODUCES:
+
+  Script 1: Console text (physics equations)
+  Script 2: 1 CSV file + 5 PNG plots
+  Script 3: 2 PNG comparison plots
+  Template: Your custom outputs
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CUSTOMIZE:
+
+  Change control gains:
+    Edit: Kp = 10.0, Kd = 5.0
+
+  Change spacecraft properties:
+    Edit: I_hub = np.diag([100, 120, 80])
+
+  Create your own:
+    cp 00_template_custom.py my_sim.py
+    nano my_sim.py
+    python3 my_sim.py
+
+═══════════════════════════════════════════════════════════════════════════════
+
+VERIFY OUTPUT:
+
+  Check files created:
+    ls -lh *.csv *.png
+
+  Check CSV data:
+    head -20 simulation_results.csv
+
+  View plots:
+    open plot_attitude.png    (macOS)
+    xdg-open plot_attitude.png (Linux)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+DOCUMENTATION:
+
+  START_HERE.txt           - 60-second intro
+  TESTING_GUIDE.md         - Complete testing guide
+  RUN_THESE_SCRIPTS.md     - Quick reference
+  PYTHON_SCRIPTS_README.md - Module details
+  INDEX.md                 - File index
+
+═══════════════════════════════════════════════════════════════════════════════
+
+EXPECTED RUNTIMES:
+
+  Test 1: 1 second
+  Test 2: 15 seconds
+  Test 3: 40 seconds
+  ─────────────────
+  Total: ~70 seconds
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SUCCESS = All tests pass without errors ✓
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Ready? Type this:
+
+  python3 01_single_rw_derivation.py
+
+═══════════════════════════════════════════════════════════════════════════════
