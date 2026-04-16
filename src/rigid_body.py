@@ -125,16 +125,18 @@ def dcm_from_quaternion(q: np.ndarray) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        Direction Cosine Matrix (3x3)
+        Direction Cosine Matrix (3x3), body to inertial frame.
     """
     q1, q2, q3, q4 = q
     
-    dcm = np.array([
+    # Quaternion relation below yields inertial->body. Transpose it so this
+    # function matches dcm_from_euler_angles (body->inertial convention).
+    dcm_i_to_b = np.array([
         [q4**2 + q1**2 - q2**2 - q3**2, 2*(q1*q2 + q3*q4), 2*(q1*q3 - q2*q4)],
         [2*(q1*q2 - q3*q4), q4**2 - q1**2 + q2**2 - q3**2, 2*(q2*q3 + q1*q4)],
         [2*(q1*q3 + q2*q4), 2*(q2*q3 - q1*q4), q4**2 - q1**2 - q2**2 + q3**2]
     ])
-    return dcm
+    return dcm_i_to_b.T
 
 
 def kinematics_euler(
