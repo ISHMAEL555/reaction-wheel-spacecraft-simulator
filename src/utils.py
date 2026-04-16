@@ -386,8 +386,235 @@ def plot_phase_portrait(
     ax.set_xlabel(r'$\omega_x$ (rad/s)')
     ax.set_ylabel(r'$\omega_y$ (rad/s)')
     ax.set_zlabel(r'$\omega_z$ (rad/s)')
-    ax.set_title('Angular Velocity Phase Portrait')
+    ax.set_title('Angular Velocity Phase Portrait (Polhode)')
     ax.legend()
     
     plt.tight_layout()
     return fig, ax
+
+
+def plot_polhode_herpolhode(
+    t: List[float],
+    w_body: List[np.ndarray],
+    h_inertial: List[np.ndarray],
+    figsize: Tuple[int, int] = (14, 6)
+) -> Tuple[plt.Figure, np.ndarray]:
+    """Plot polhode (body frame) and herpolhode (inertial frame).
+    
+    Polhode: Trace of angular velocity vector in body-fixed frame
+    Herpolhode: Trace of angular velocity vector in inertial frame
+    
+    Parameters
+    ----------
+    t : List[float]
+        Time history (s)
+    w_body : List[np.ndarray]
+        Angular velocity in body frame [[wx, wy, wz], ...]
+    h_inertial : List[np.ndarray]
+        Angular momentum in inertial frame [[hx, hy, hz], ...]
+    figsize : Tuple[int, int]
+        Figure size
+    
+    Returns
+    -------
+    fig : plt.Figure
+    axes : np.ndarray
+    """
+    from mpl_toolkits.mplot3d import Axes3D
+    
+    w = np.array(w_body)
+    h = np.array(h_inertial)
+    
+    fig = plt.figure(figsize=figsize)
+    
+    # Polhode (body frame)
+    ax1 = fig.add_subplot(121, projection='3d')
+    ax1.plot(w[:, 0], w[:, 1], w[:, 2], 'b-', linewidth=1.5, label='Polhode')
+    ax1.scatter(w[0, 0], w[0, 1], w[0, 2], c='g', s=100, marker='o', label='Start')
+    ax1.scatter(w[-1, 0], w[-1, 1], w[-1, 2], c='r', s=100, marker='s', label='End')
+    ax1.set_xlabel(r'$\omega_x$ (rad/s)')
+    ax1.set_ylabel(r'$\omega_y$ (rad/s)')
+    ax1.set_zlabel(r'$\omega_z$ (rad/s)')
+    ax1.set_title('Polhode (Body-Fixed Frame)')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+    
+    # Herpolhode (inertial frame)
+    ax2 = fig.add_subplot(122, projection='3d')
+    ax2.plot(h[:, 0], h[:, 1], h[:, 2], 'r-', linewidth=1.5, label='Herpolhode')
+    ax2.scatter(h[0, 0], h[0, 1], h[0, 2], c='g', s=100, marker='o', label='Start')
+    ax2.scatter(h[-1, 0], h[-1, 1], h[-1, 2], c='k', s=100, marker='s', label='End')
+    ax2.set_xlabel(r'$h_x$ (kg·m²/s)')
+    ax2.set_ylabel(r'$h_y$ (kg·m²/s)')
+    ax2.set_zlabel(r'$h_z$ (kg·m²/s)')
+    ax2.set_title('Herpolhode (Inertial Frame)')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+    
+    fig.suptitle('Polhode and Herpolhode Trajectories', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    
+    return fig, np.array([ax1, ax2])
+
+
+def plot_nutation_precession_rates(
+    t: List[float],
+    w_body: List[np.ndarray],
+    h_inertial: List[np.ndarray],
+    I_hub: np.ndarray,
+    figsize: Tuple[int, int] = (14, 10)
+) -> Tuple[plt.Figure, np.ndarray]:
+    """Plot nutation, precession, transverse, and spin rates.
+    
+    Nutation: Rate of change of angle between spin axis and angular momentum
+    Precession: Rate of rotation of angular momentum vector around inertial axis
+    Transverse: Components of angular velocity perpendicular to spin axis
+    Spin: Component along spin axis
+    
+    Parameters
+    ----------
+    t : List[float]
+        Time history (s)
+    w_body : List[np.ndarray]
+        Angular velocity in body frame [[wx, wy, wz], ...]
+    h_inertial : List[np.ndarray]
+        Angular momentum in inertial frame [[hx, hy, hz], ...]
+    I_hub : np.ndarray
+        Spacecraft inertia matrix (3x3)
+    figsize : Tuple[int, int]
+        Figure size
+    
+    Returns
+    -------
+    fig : plt.Figure
+    axes : np.ndarray
+    """
+    w = np.array(w_body)
+    h = np.array(h_inertial)
+    
+    # Calculate magnitudes
+    h_mag = np.linalg.norm(h, axis=1)
+    w_mag = np.linalg.norm(w, axis=1)
+    
+    # Angular momentum direction (space-fixed)
+    h_unit = np.array([h[i] / h_mag[i] if h_mag[i] > 1e-6 else np.array([0, 0, 1]) 
+                       for i in range(len(h))])
+    
+    # Spin rate (component along angular momentum direction)
+    spin_rate = np.array([np.dot(w[i], h_unit[i]) for i in range(len(w))])
+    
+    # Transverse angular velocity
+    w_trans = np.array([w[i] - spin_rate[i] * h_unit[i] for i in range(len(w))])
+    w_trans_mag = np.linalg.norm(w_trans, axis=1)
+    
+    # Nutation angle (angle between angular velocity and angular momentum)
+    cos_nutation = np.array([np.dot(w[i], h_unit[i]) / (w_mag[i] + 1e-8) 
+                            for i in range(len(w))])
+    cos_nutation = np.clip(cos_nutation, -1, 1)
+    nutation_angle = np.arccos(cos_nutation)
+    
+    # Precession rate (rate of change of angular momentum direction)
+    # dp = |dh/dt × h_unit| / |h|
+    h_dot = np.gradient(h, t, axis=0)
+    precession_rate = np.zeros(len(t))
+    for i in range(len(t)):
+        h_unit_dot = np.gradient(h_unit, axis=0)[i]
+        torque_mag = np.linalg.norm(np.cross(h_unit_dot, h_unit[i])) if h_mag[i] > 1e-6 else 0
+        precession_rate[i] = torque_mag * h_mag[i]
+    
+    fig, axes = plt.subplots(2, 2, figsize=figsize, sharex=True)
+    
+    # Nutation angle
+    ax = axes[0, 0]
+    ax.plot(t, degrees(nutation_angle), 'b-', linewidth=2)
+    ax.set_ylabel('Nutation Angle (deg)', fontsize=11)
+    ax.set_title('Nutation Angle (angle between ω and h)', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    
+    # Precession rate
+    ax = axes[0, 1]
+    ax.plot(t, degrees(precession_rate), 'r-', linewidth=2)
+    ax.set_ylabel('Precession Rate (deg/s)', fontsize=11)
+    ax.set_title('Precession Rate (rotation of h in inertial frame)', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    
+    # Spin rate
+    ax = axes[1, 0]
+    ax.plot(t, spin_rate, 'g-', linewidth=2)
+    ax.set_ylabel('Spin Rate (rad/s)', fontsize=11)
+    ax.set_xlabel('Time (s)', fontsize=11)
+    ax.set_title('Spin Rate (component along h)', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    
+    # Transverse rate
+    ax = axes[1, 1]
+    ax.plot(t, w_trans_mag, 'm-', linewidth=2)
+    ax.set_ylabel('Transverse Rate (rad/s)', fontsize=11)
+    ax.set_xlabel('Time (s)', fontsize=11)
+    ax.set_title('Transverse Rate (component ⊥ to h)', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    
+    fig.suptitle('Nutation, Precession, and Spin Dynamics', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    
+    return fig, axes
+
+
+def plot_energy_momentum_analysis(
+    t: List[float],
+    w_body: List[np.ndarray],
+    h_inertial: List[np.ndarray],
+    I_hub: np.ndarray,
+    figsize: Tuple[int, int] = (14, 6)
+) -> Tuple[plt.Figure, np.ndarray]:
+    """Plot rotational energy and angular momentum magnitude.
+    
+    Parameters
+    ----------
+    t : List[float]
+        Time history (s)
+    w_body : List[np.ndarray]
+        Angular velocity [[wx, wy, wz], ...]
+    h_inertial : List[np.ndarray]
+        Angular momentum [[hx, hy, hz], ...]
+    I_hub : np.ndarray
+        Inertia matrix (3x3)
+    figsize : Tuple[int, int]
+        Figure size
+    
+    Returns
+    -------
+    fig : plt.Figure
+    axes : np.ndarray
+    """
+    w = np.array(w_body)
+    h = np.array(h_inertial)
+    h_mag = np.linalg.norm(h, axis=1)
+    
+    # Rotational kinetic energy: E = 0.5 * w^T * I * w
+    kinetic_energy = np.zeros(len(t))
+    for i in range(len(t)):
+        kinetic_energy[i] = 0.5 * np.dot(w[i], np.dot(I_hub, w[i]))
+    
+    fig, axes = plt.subplots(1, 2, figsize=figsize, sharex=True)
+    
+    # Rotational energy
+    ax = axes[0]
+    ax.plot(t, kinetic_energy, 'b-', linewidth=2)
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Rotational Energy (J)')
+    ax.set_title('Rotational Kinetic Energy')
+    ax.grid(True, alpha=0.3)
+    
+    # Angular momentum magnitude
+    ax = axes[1]
+    ax.plot(t, h_mag, 'r-', linewidth=2)
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Angular Momentum (kg·m²/s)')
+    ax.set_title('Total Angular Momentum Magnitude')
+    ax.grid(True, alpha=0.3)
+    
+    fig.suptitle('Energy and Momentum Conservation', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    
+    return fig, axes
