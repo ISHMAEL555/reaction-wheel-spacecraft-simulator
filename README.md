@@ -1,15 +1,22 @@
-# SPACE_SYSTEMS# Reaction Wheel Spacecraft Attitude Control Simulator
+# Reaction Wheel Spacecraft Attitude Control Simulator
 
-Python simulation of rigid body spacecraft dynamics with reaction wheel actuator, based on Schaub & Junkins "Analytical Mechanics of Space Systems" (Chapter 4).
+**Python simulation of rigid spacecraft + reaction wheel dynamics** based on **Schaub & Junkins - Analytical Mechanics of Space Systems (Chapter 4)**.
+
+This project implements the coupled equations of motion for a rigid body spacecraft with a single fixed reaction wheel actuator.
 
 ## Features
-- Coupled equations of motion for spacecraft + reaction wheel
-- Numerical integration using SciPy
-- Torque-free and controlled motion
-- (Add plots/animation screenshots here)
+- Derivation and implementation of spacecraft + reaction wheel EOMs
+- Numerical integration using `scipy.integrate.solve_ivp`
+- Torque-free motion simulation
+- Controlled motion (constant torque or simple PD controller - coming soon)
+- Visualization of angular velocity ω(t) and wheel speed Ω(t)
 
 ## Technologies
-- Python, NumPy, SciPy, Matplotlib
+- Python 3
+- NumPy, SciPy, Matplotlib
+- Jupyter Notebooks
 
 ## Reference
-Problems 4.20–4.23 from Schaub & Junkins textbook
+- Problems 4.20 – 4.23 from Schaub & Junkins textbook
+
+## Project Structure
