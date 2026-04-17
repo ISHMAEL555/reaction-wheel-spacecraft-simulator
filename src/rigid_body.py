@@ -171,6 +171,44 @@ def kinematics_euler(
     return np.array([d_roll, d_pitch, d_yaw])
 
 
+
+
+def kinematics_quaternion(q: np.ndarray, w_body: np.ndarray) -> np.ndarray:
+    """Compute quaternion rates from body angular velocity.
+
+    Uses scalar-last quaternion convention q=[q1, q2, q3, q4].
+
+    Parameters
+    ----------
+    q : np.ndarray
+        Quaternion [q1, q2, q3, q4]
+    w_body : np.ndarray
+        Angular velocity [wx, wy, wz] (rad/s)
+
+    Returns
+    -------
+    np.ndarray
+        Quaternion derivative dq/dt (4,)
+    """
+    wx, wy, wz = w_body
+
+    omega_mat = np.array([
+        [0.0, wz, -wy, wx],
+        [-wz, 0.0, wx, wy],
+        [wy, -wx, 0.0, wz],
+        [-wx, -wy, -wz, 0.0],
+    ])
+    return 0.5 * (omega_mat @ q)
+
+
+def normalize_quaternion(q: np.ndarray) -> np.ndarray:
+    """Return normalized quaternion with scalar-last convention."""
+    n = np.linalg.norm(q)
+    if n <= 1e-12:
+        return np.array([0.0, 0.0, 0.0, 1.0])
+    return q / n
+
+
 def euler_dynamics(
     I: np.ndarray,
     w: np.ndarray,

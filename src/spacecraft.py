@@ -167,7 +167,7 @@ class CoupledSpacecraft:
         return derivatives
     
     def step(self, dt: float, u_wheel: float = 0.0, tau_ext: Optional[np.ndarray] = None) -> None:
-        """Integrate forward one time step using simple Euler integration.
+        """Integrate forward one time step using 4th-order Runge-Kutta (RK4).
         
         Parameters
         ----------
@@ -183,12 +183,16 @@ class CoupledSpacecraft:
         
         self.wheel.alpha = u_wheel / self.I_wheel
         
-        # Compute derivatives at current state
         state_vec = self.get_state_vector()
-        derivatives = self.dynamics(self.state.time, state_vec)
-        
-        # Update state
-        new_state = state_vec + derivatives * dt
+
+        # RK4 integration: significantly better conservation than explicit Euler.
+        t0 = self.state.time
+        k1 = self.dynamics(t0, state_vec)
+        k2 = self.dynamics(t0 + 0.5 * dt, state_vec + 0.5 * dt * k1)
+        k3 = self.dynamics(t0 + 0.5 * dt, state_vec + 0.5 * dt * k2)
+        k4 = self.dynamics(t0 + dt, state_vec + dt * k3)
+        new_state = state_vec + (dt / 6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4)
+
         self.set_state_vector(new_state)
         
         # Update wheel
